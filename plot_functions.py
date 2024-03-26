@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#%% -*- coding: utf-8 -*-
 """
 Created on Fri Apr 21 10:44:17 2023
 
@@ -28,11 +28,43 @@ COLOR_PA="#FAC748"
 COLOR_UA="#ae62a2"
 
 def str_matrix_to_numpy(str_mat):
+    """The function `str_matrix_to_numpy` converts a string representation of a matrix into a NumPy array
+    of floating-point numbers.
+    
+    Parameters
+    ----------
+    str_mat
+        The `str_mat` parameter is a string representation of a matrix in the format of a 2D list, similar to what is displayed by the print function.
+        eg for a 2x2 matrix: 
+            "[[1 0]
+            [0 1]]"
+    Returns
+    -------
+        This function takes a string representation of a matrix, converts it to a numpy array of floats,
+    and reshapes it into a square matrix. The function returns the numpy array representing the matrix.
+    
+    """
     str_mat = str_mat.replace("[", "").replace("]", "").split()
     n = int(len(str_mat)**0.5)
     return np.array(str_mat, dtype=float).reshape(n,n)
 
 def per_class_metrics(conf_mat):
+    """The function calculates precision, recall, and F1 score for each class based on a confusion matrix.
+    
+    Parameters
+    ----------
+    conf_mat
+        The function `per_class_metrics` calculates precision, recall, and F1 score for each class based on
+    the confusion matrix provided as input. The confusion matrix `conf_mat` should represent the true
+    positive, false positive, true negative, and false negative values for each class.
+    
+    Returns
+    -------
+        The function `per_class_metrics` returns three arrays: `recalls`, `precisions`, and `F1`. These
+    arrays contain the recall, precision, and F1 score metrics calculated for each class based on the
+    input confusion matrix `conf_mat`.
+    
+    """
     diag = np.diag(conf_mat)
     row_sums = np.sum(conf_mat, axis=1)
     col_sums = np.sum(conf_mat, axis=0)
@@ -47,7 +79,16 @@ def per_class_metrics(conf_mat):
     return recalls, precisions, F1
 
 def plot_dataframe(df):
-    fig, ax = plt.subplots(figsize=1.5*np.array(df.shape))
+    """The `plot_dataframe` function creates a heatmap plot of a DataFrame with annotations showing the
+    values of each cell.
+    
+    Parameters
+    ----------
+    df: pd.DataFrame
+        A dataframe representation of the confusion matrix, with class labels as index and columns
+    
+    """
+    __, ax = plt.subplots(figsize=1.5*np.array(df.shape))
     plt.imshow(df, cmap='Wistia')
     plt.xticks(ticks=range(len(df.columns)), labels=df.columns)
     plt.xlabel("prediction", fontsize=30)
@@ -55,9 +96,6 @@ def plot_dataframe(df):
     plt.ylabel("ground truth", rotation=90, fontsize=30)
     plt.colorbar()
     M = ax.transData.get_matrix()
-    #xscale = M[0,0]
-    #yscale = M[1,1]
-    #plt.scatter(np.where(df==0)[1], np.where(df==0)[0], marker='s', c='white', s=xscale**2, zorder=1000)
     for y in range(df.shape[0]):
        for x in range(df.shape[1]):
           plt.text(x , y, '%.4f' % df.iloc[y, x],
@@ -68,7 +106,17 @@ def plot_dataframe(df):
     plt.show()
 
 def plot_dataframe_with_separate_diag_color(df, title=""):
-    fig, ax = plt.subplots(figsize=1.5*np.array(df.shape))
+    """The function `plot_dataframe_with_separate_diag_color` creates a plot of a DataFrame with diagonal
+    elements in one color and off-diagonal elements in another color.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A dataframe representation of the confusion matrix, with class labels as index and columns
+    title : str, optional
+        a string that represents the title of the plot., by default ""
+    """
+    __, ax = plt.subplots(figsize=1.5*np.array(df.shape))
     #Diagonal elements
     ax.imshow(np.diag(np.diag(df)), cmap='Greens', vmin=0, vmax=1)
     #Off-Diagonal elements
@@ -88,9 +136,6 @@ def plot_dataframe_with_separate_diag_color(df, title=""):
     cbar_diagonal.ax.yaxis.set_label_position('left')
     cbar_off_diagonal.ax.yaxis.set_label_position('left')
     M = ax.transData.get_matrix()
-    #xscale = M[0,0]
-    #yscale = M[1,1]
-    #plt.scatter(np.where(df==0)[1], np.where(df==0)[0], marker='s', c='white', s=xscale**2, zorder=1000)
     for y in range(df.shape[0]):
        for x in range(df.shape[1]):
           plt.text(x , y, '%.4f' % df.iloc[y, x],
@@ -102,6 +147,7 @@ def plot_dataframe_with_separate_diag_color(df, title=""):
         plt.title(title)
 
 def recall_matrix_with_sep_diag(df_matrix):
+    """Plot the recall matrix (Producer accuracy) from the confusion matrix."""
     plot_dataframe_with_separate_diag_color(
         (df_matrix.T/df_matrix.sum(axis=1)).T,
         "recall matrix"
@@ -109,59 +155,29 @@ def recall_matrix_with_sep_diag(df_matrix):
     plt.show()
 
 def precision_matrix_with_sep_diag(df_matrix):
+    """Plot the precision matrix (User accuracy) from the confusion matrix."""
     plot_dataframe_with_separate_diag_color(
         df_matrix/df_matrix.sum(axis=0),
         "precision matrix"
         )
     plt.show()
 
-def recall_matrix(df_matrix):
-    fig, ax = plt.subplots(figsize=1.5*np.array(df_matrix.shape))
-    df_normalised_per_row = (df_matrix.T/df_matrix.sum(axis=1)).T
-    plt.imshow(df_normalised_per_row, cmap='Wistia')
-    plt.xticks(ticks=range(len(df_matrix.columns)), labels=df_matrix.columns)
-    plt.xlabel("prediction", fontsize=30)
-    plt.yticks(ticks=range(len(df_matrix.index)), labels=df_matrix.index)
-    plt.ylabel("ground truth", rotation=90, fontsize=30)
-    plt.colorbar()
-    M = ax.transData.get_matrix()
-    xscale = M[0,0]
-    yscale = M[1,1]
-    #plt.scatter(np.where(df==0)[1], np.where(df==0)[0], marker='s', c='white', s=xscale**2, zorder=1000)
-    for y in range(df_matrix.shape[0]):
-       for x in range(df_matrix.shape[1]):
-          plt.text(x , y, '%.4f' % df_normalised_per_row.iloc[y, x],
-             horizontalalignment='center',
-             verticalalignment='center',
-             zorder=10000
-          )
-    #plt.title("recall matrix")
-    plt.show()
-
-def precision_matrix(df_matrix):
-    fig, ax = plt.subplots(figsize=1.5*np.array(df_matrix.shape))
-    df_normalised_per_col = df_matrix/df_matrix.sum(axis=0)
-    plt.imshow(df_normalised_per_col, cmap='Wistia')
-    plt.xticks(ticks=range(len(df_matrix.columns)), labels=df_matrix.columns)
-    plt.xlabel("prediction", fontsize=30)
-    plt.yticks(ticks=range(len(df_matrix.index)), labels=df_matrix.index)
-    plt.ylabel("ground truth", rotation=90, fontsize=30)
-    plt.colorbar()
-    M = ax.transData.get_matrix()
-    xscale = M[0,0]
-    yscale = M[1,1]
-    #plt.scatter(np.where(df==0)[1], np.where(df==0)[0], marker='s', c='white', s=xscale**2, zorder=1000)
-    #Write text in center of the cell
-    for y in range(df_matrix.shape[0]):
-       for x in range(df_matrix.shape[1]):
-          plt.text(x , y, '%.4f' % df_normalised_per_col.iloc[y, x],
-             horizontalalignment='center',
-             verticalalignment='center',
-             zorder=10000
-          )
-    plt.show()
-
 def F1_recall_precision_barh(F1, recall, precision, classes, conf_mat):
+    """Make an horizontal bar plot for each of the metric, for each class
+
+    Parameters
+    ----------
+    F1 : list or np.array
+        List of the F1-scores of each class.
+    recall : list or np.array
+        List of the recall (Producer accuracy) of each class.
+    precision : list or np.array
+        List of the precision (User accuracy) of each class.
+    classes : list or np.array
+        List of the class codes or labels.
+    conf_mat : np.array
+        A numpy representation of the confusion matrix.
+    """
     n = len(classes)
     width = 0.25
     plt.barh(np.arange(n) + 2 * width, F1, width, label="F1", color=COLOR_F1)
@@ -184,6 +200,27 @@ def F1_recall_precision_barh_vs_baseline(
         F1, recall, precision,
         F1_baseline, recall_baseline, precision_baseline,
         classes, conf_mat):
+    """Make an horizontal bar plot for each of the metric, for each class, and compares the score of a method with score of a baseline.
+
+    Parameters
+    ----------
+    F1 : list or np.array
+        List of the F1-scores of each class for the compared method.
+    recall : list or np.array
+        List of the recall (Producer accuracy) of each class for the compared method.
+    precision : list or np.array
+        List of the precision (User accuracy) of each class for the compared method.
+    F1_baseline : list or np.array
+        List of the F1-scores of each class for the baseline method.
+    recall_baseline : list or np.array
+        List of the recall (Producer accuracy) of each class for the baseline method.
+    precision_baseline : list or np.array
+        List of the precision (User accuracy) of each class for the baseline method.
+    classes : list or np.array
+        List of the class codes or labels for both methods.
+    conf_mat : np.array
+        A numpy representation of the confusion matrix for the compared method.
+    """
     n = len(classes)
     baseline_style={
         "color":[0,0,0,0],
@@ -215,160 +252,20 @@ def F1_recall_precision_barh_vs_baseline(
             plt.annotate("Class absent but predicted", [0.1, i], color="red", va="center")
     plt.gca().invert_yaxis()
 
-def change_between_automatic_and_final_ocsge(df):
-
-    df2 = (df.T/df.sum(axis=1)).T
-    red = np.eye(len(df2))
-    green = np.zeros(df2.shape)
-    blue = np.ones(df2.shape)-np.eye(len(df2))
-    colors = np.stack([red, green, blue])
-
-    f = plt.figure(figsize=(20, 15))
-    f.suptitle("Change in label between automatic and final OCSGE (Rhône 2020)")
-    for i in range(len(df2)):
-        ax = f.add_subplot(5, 5, i+1)
-        df2.iloc[i].plot(kind='bar', title=f"From {df2.index[i]} (count={int(df.iloc[i].sum())}) to", ax=ax, color=colors.T[i])
-        vmax = df2.iloc[i].max()
-        for j in range(len(df2)):
-            v = df2.iloc[i, j]
-            if v>0.8*vmax:
-                ax.text(j+0.5, v*0.95, f"{np.round(v,3)}", color=colors.T[i, j])
-            elif v<=0.8*vmax:
-                ax.text(j-0.3, v+0.02, f"{np.round(v,3)}", color=colors.T[i, j], rotation=90)
-
-    # f = plt.figure(figsize=(20, 15))
-    ax = f.add_subplot(5, 5, i+2)
-    ax.axis('off')
-    j = 0
-    N = 17
-    for code in nomenclature.index:
-        if code in df2.index:
-            j += 1
-            if j>N//2:
-                j=0
-                ax = f.add_subplot(5, 5, i+3)
-                ax.axis('off')
-            color = nomenclature.loc[code,["R", "V", "B"]]/255
-            ax.text(0, 1 - 2*j/N,
-                    code,
-                    color=round(1-color.sum()/3)*np.ones(3),
-                    backgroundcolor=color,
-                    transform=ax.transAxes,
-                    fontsize=7.5,
-                    fontweight='bold')
-            ax.text(0.18, 1 - 2*j/N, nomenclature.loc[code, "LIBELLE_EN"],
-                    transform=ax.transAxes,
-                    fontsize=7.5)
-
-
-    f.tight_layout()
-    plt.show()
-
-def matrices_correlation_ocsge(ocsge, columns_to_keep):
-    ocsge_subset = ocsge.loc[
-        ocsge.loc[:, "CODE_US"].isin([
-            'US2', 'US3', 'US5', 'US1.1']),
-        columns_to_keep
-        ]
-
-    ocsge2 = ocsge.loc[
-        (ocsge.loc[:, "CODE_US"]=='US2'),
-        columns_to_keep
-        ]
-
-    ocsge3 = ocsge.loc[
-        (ocsge.loc[:, "CODE_US"]=='US3'),
-        columns_to_keep
-        ]
-
-    ocsge5 = ocsge.loc[
-        (ocsge.loc[:, "CODE_US"]=='US5'),
-        columns_to_keep
-        ]
-
-    # ocsge1 = ocsge.loc[
-    #     (ocsge.loc[:, "CODE_US"]=='US1.1'),
-    #     columns_to_keep
-    #     ]
-
-    #Affichage des matrices de corrélations
-    for i, df in enumerate([ocsge2,
-                            ocsge3,
-                            ocsge5,
-                            # ocsge1,
-                            ocsge_subset]):
-        plt.figure(figsize=(20,20))
-        plt.imshow(df.select_dtypes(['number']).corr(),
-                    cmap="coolwarm",
-                    vmin=-1,
-                    vmax=1)
-        plt.xticks(ticks=(np.arange(len(df.select_dtypes(['number']).columns))),
-                    labels=df.select_dtypes(['number']).columns,
-                    rotation = 90)
-        plt.yticks(ticks=(np.arange(len(df.select_dtypes(['number']).columns))),
-                    labels=df.select_dtypes(['number']).columns)
-        plt.colorbar();
-        plt.title(
-            "Matrice de corrélation des paramètres"
-            f" pour US{[2, 3, 5, '2, US3 et US5'][i]}")
-
-def correlation_matrices_per_source(ocsge):
-    dos = Sources("all_LU")
-    df = ocsge[dos.all_cols]
-    df = df[df.columns[~ df.columns.str.contains("mean_1m")]].select_dtypes(['number'])
-    corr = df.corr(method='spearman')
-    plt.figure(figsize=(20,20))
-    plt.imshow(corr,
-                cmap="coolwarm",
-                vmin=-1,
-                vmax=1)
-    plt.xticks(ticks=(np.arange(len(df.columns))),
-                labels=df.columns,
-                rotation = 90)
-    plt.xticks(ticks=(0.5+ np.arange(len(corr.columns)-1)),
-            minor=True
-            )
-    plt.yticks(ticks=(0.5+ np.arange(len(corr.columns)-1)),
-        minor=True
-        )
-    plt.gca().tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
-    plt.yticks(ticks=(np.arange(len(df.columns))),
-                labels=df.columns)
-    plt.colorbar()
-    plt.grid(which='minor')
-    #aggregate by source
-    #remove the diagonal
-    IQR = lambda x: x.quantile(0.75) - x.quantile(0.25)
-    for aggregation in ["mean", 'std', "median", IQR, 'max', "min"]:
-        corr_s = corr - np.diag([1]*len(corr))
-        corr_s = corr_s.abs()
-        corr_s["source"] = dos.dict_attributes_sources
-        corr_s = corr_s.groupby("source").aggregate(aggregation)
-        corr_s = corr_s.T
-        corr_s["source"] = dos.dict_attributes_sources
-        corr_s = corr_s.groupby("source").aggregate(aggregation)
-        plt.figure(figsize=(20,20))
-        plt.imshow(corr_s,
-                    cmap="Reds",
-                    vmin=0,
-                    vmax=1)
-        plt.xticks(ticks=(np.arange(len(corr_s.columns))),
-                    labels=corr_s.columns,
-                    rotation = 90)
-        plt.xticks(ticks=(0.5+ np.arange(len(corr_s.columns)-1)),
-                minor=True
-                )
-        plt.gca().tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
-        plt.yticks(ticks=(np.arange(len(corr_s.columns))),
-                    labels=corr_s.columns)
-        plt.yticks(ticks=(0.5+ np.arange(len(corr_s.columns)-1)),
-            minor=True
-            )
-        plt.colorbar(label=f"{aggregation} absolute correlation")
-        plt.grid(which='minor')
-
-
 def draw_metrics(path, rows, baseline_row=None, savepath=None):
+    """Reads given rows of a given excel file, and plot the obtained results.
+
+    Parameters
+    ----------
+    path : str
+        The path to the excel file. The format of the file must be similar to the output of "land_use_classification_pipeline.py".
+    rows : array_like or int
+        List of the rows to plot.
+    baseline_row : int, optional
+        If provided, the results of each row will be compared to this baseline, by default None
+    savepath : str, optional
+        The path to save the image, by default None = the image is not saved.
+    """
     df = pd.read_excel(path)
     US_utilises = np.array(
         df.columns[
@@ -417,14 +314,24 @@ def draw_metrics(path, rows, baseline_row=None, savepath=None):
     plt.show()
 
 
-def importance_des_sources(df, rows, sources_names, savepath=None):
-    """
+def sources_importance(df, rows, sources_names, savepath=None):
+    """Plot for each source the F1-score obtained when trained and evaluated using only this source.
 
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe corresponding to the opened excel file with the results.
+    rows : array_like
+        List of the rows to plot. Each row correspond in the excel file to the results of one source.
+    sources_names : array_like
+        List of the names of the sources.
+    savepath : str, optional
+        Path to save the output image, by default None
 
     Example
     -------
 
-    importance_des_sources(
+    sources_importance(
         df,
         list(reversed([5, 6, 7, 11, 12, 9, 10, 27, 14, 13, 8, 26])),
         list(reversed(
@@ -448,7 +355,8 @@ def importance_des_sources(df, rows, sources_names, savepath=None):
         plt.barh(
             sources_names,
             selected_metrics,
-            color=colors
+            color=colors,
+            height=0.5
             )
         labels = plt.gca().get_yticklabels()
         labels[i].set_fontweight('bold')
@@ -460,7 +368,7 @@ def importance_des_sources(df, rows, sources_names, savepath=None):
         plt.barh(sources_names, selected_metrics)
     for i in range(len(sources_names)):
         score = selected_metrics.iloc[i]
-        plt.text(score, i, f"{score :.2f}", ha='left', va='center')
+        plt.text(score, i, f" {score :.2f}", ha='left', va='center')
     plt.ylabel("Sources")
     plt.xlabel("mF1")
     plt.xlim(0, 1)
@@ -471,8 +379,25 @@ def importance_des_sources(df, rows, sources_names, savepath=None):
     plt.show()
 
 def loco(df, rows, sources_names, baserow, savepath=None, xlims=None):
-    """
+    """ "Leave One Covariate Out".
 
+    Plot for each source the F1-score lost 
+    when trained and evaluated using all sources except this source.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe corresponding to the opened excel file with the results.
+    rows : array_like
+        List of the rows to plot. Each row correspond in the excel file to the results of one source.
+    sources_names : array_like
+        List of the names of the sources.
+    baserow : int
+        The row in the excel files corresponding to the model trained and evaluated using all sources.
+    savepath : str, optional
+        Path to save the output image, by default None
+    xlims : list, optional
+        x limits of the plot, as in matplotlib, by default None
 
     Example
     -------
@@ -499,7 +424,7 @@ def loco(df, rows, sources_names, baserow, savepath=None, xlims=None):
         np.where(s.str.contains("\+"))[0]
         ] = -selected_metrics.iloc[np.where(s.str.contains("\+"))[0]]
     #Plotting
-    plt.barh(sources_names, selected_metrics, color=COLOR_F1)
+    plt.barh(sources_names, selected_metrics, color=COLOR_F1, height=0.5)
     plt.ylabel("Sources")
     plt.xlabel("mF1")
     #plt.xlim(-1, 1)
@@ -518,137 +443,27 @@ def loco(df, rows, sources_names, baserow, savepath=None, xlims=None):
         plt.savefig(savepath, dpi=300)
     plt.show()
 
-def per_class_metrics_in_function_of_class_size_from_row(
-        class_size,
-        df,
-        row
-        ):
-    US_utilises = np.array(
-        df.columns[
-            df.columns.str.contains("F1 test")
-            ].str.replace("F1 test ","").str.replace("US","LU").str.replace("_other","6")
-        )
-    rappels, precisions, f1s = per_class_metrics(str_matrix_to_numpy(df.loc[0, "test set confusion matrix"]))
-    for x in [rappels, precisions, f1s]:
-        x[np.isnan(x)] = 0
-
-    class_size.index = class_size.index.str.replace("US", "LU")
-    absent_classes = US_utilises[~np.isin(US_utilises, class_size.index)]
-    class_size = class_size.T
-    class_size[absent_classes] = 0
-    class_size = class_size[US_utilises]
-    class_size = np.array(class_size.T)
-    per_class_metrics_in_function_of_class_size(
-            class_size,
-            f1s,
-            rappels,
-            precisions,
-            US_utilises,
-            #dep="Gers"
-            )
-
-def per_class_metrics_in_function_of_class_size(
-        class_size,
-        f1s,
-        rappels,
-        precisions,
-        US_utilises,
-        #dep="Gers"
-        ):
-    from scipy.stats import spearmanr
-    r_f1, p_f1 = spearmanr(f1s, class_size)
-    r_recall, p_recall = spearmanr(rappels, class_size)
-    r_precision, p_precision = spearmanr(precisions, class_size)
-    decalage = np.zeros((len(class_size)))
-    #decalage[[3, 10, 8, 5, 15]] = [0.03, -0.01, -0.05, 0.01, -0.03]
-    #decalage[[2, 7, 9, 11, 6, 4]] = [-0.02, 0.02, 0.02, -0.02, 0.02, -0.01]
-    plt.plot(class_size, f1s, "o", label=f"F1 (Spearman correlation={r_f1:.2f}, p-value={p_f1:.2e})", color=COLOR_F1)
-    plt.plot(class_size, precisions, "o", label=f"UA (Spearman correlation={r_precision:.2f}, p-value={p_precision:.2e})",color=COLOR_UA)
-    plt.plot(class_size, rappels, "o", label=f"PA (Spearman correlation={r_recall:.2f}, p-value={p_recall:.2e})", color=COLOR_PA)
-    for i in range(len(US_utilises)):
-        plt.plot([class_size[i]]*2,[rappels[i], precisions[i]], "LightGrey", zorder=-1000)
-        plt.annotate(US_utilises[i].replace("US", "LU"), (class_size[i], f1s[i]) + decalage[i])
-    plt.xscale("log")
-    plt.xlabel("Number of samples in dataset (log scale)")
-    plt.ylabel("Metrics value")
-    #plt.title(f"Per class metrics in function of class size in {dep}")
-    plt.legend(loc=(0, 1.02))
-
-def graph_confusion_matrix(conf_mat, US_utilises):
-    precision_mat = conf_mat/conf_mat.sum(axis=0)
-    precision_mat[np.isnan(precision_mat)] = 0
-    precision_mat = precision_mat + precision_mat.T
-    gnx = nx.from_numpy_array(precision_mat * (1-np.eye(len(precision_mat))))
-    plt.figure(figsize=(35,35))
-    ax = plt.subplot()
-    pos = nx.layout.spring_layout(gnx)
-    edge_labels = nx.get_edge_attributes(gnx, "weight")
-    nx.draw_networkx_nodes(gnx, pos, ax=ax)
-    nx.draw_networkx_edges(gnx, pos, width=100*np.array([edge_labels[key] for key in edge_labels]).astype(float), ax=ax)
-
-    edge_labels = {key[:2] : f"{(edge_labels[key]):.2f}" for key in edge_labels}
-    node_labels = {i:US for i, US in enumerate(US_utilises)}
-    nx.draw_networkx_edge_labels(gnx, pos, edge_labels, label_pos=0.25, ax=ax)
-    nx.draw_networkx_labels(gnx, pos, node_labels, ax=ax, font_color=[0.2, 0.2, 0.2])
-
-def class_histogram():
-    class_size_gers = pd.read_csv(
-        os.path.join(
-            "Documents",
-            "Resultats",
-            "all_LU_approche1",
-            'class_size.csv'), index_col=0
-        )
-    class_size_rhone = pd.read_csv(
-        os.path.join(
-            "E:\\",
-            "Resultats_69",
-            "all_LU_approche1",
-            'class_size.csv'), index_col=0
-        )
-    class_size_both_deps = pd.DataFrame(
-        index=list(set(list(class_size_gers.index) + list(class_size_rhone.index))),
-        columns=["Gers", "Rhône"]
-        )
-
-    class_size_both_deps["Gers"] = class_size_gers
-    class_size_both_deps["Rhône"] = class_size_rhone
-
-    class_size_both_deps = class_size_both_deps.sort_index().fillna(0)
-    class_size_both_deps.index = class_size_both_deps.index.str.replace("US", "LU")
-
-    class_size_both_deps =  class_size_both_deps[ class_size_both_deps.index!="LU235"]
-
-    plt.figure(figsize=(10, 4))
-    plt.bar(class_size_both_deps.index,
-            class_size_both_deps["Gers"],
-            width=-0.2,
-            align="edge",
-            label='Gers',
-            color=COLOR_GERS)
-    plt.bar(class_size_both_deps.index,
-            class_size_both_deps["Rhône"],
-            width=0.2,
-            align="edge",
-            label='Rhône',
-            color=COLOR_RHONE)
-    plt.xlabel("OCS GE LU class")
-    plt.ylabel("Number of samples")
-    plt.legend(loc='upper left')
-    plt.ylim(0, 260000)
-    plt.yticks(np.arange(250001, step=25000))
-    plt.grid()
-    for i in range(len(class_size_both_deps)):
-        for j, y in enumerate(class_size_both_deps.iloc[i]):
-            plt.text(i, y+3000, int(y),
-                     rotation=90, va='bottom',
-                     ha=['right', 'left'][j])
-    savepath=os.path.join("Pictures","article2","distribution_of_classes_in_both_departments.eps")
-    plt.tight_layout()
-    plt.savefig(savepath, dpi=300)
-    plt.show()
 
 def mixedTrainSet(df, train_dep, test_dep):
+    """Plot function for mixed train set experience.
+
+    The results are shown in the form of a latex table and of a 3D plot.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe corresponding to the opened excel file with the results.
+        It is expected that the comment column contains formated information about
+        the mixing of the two departements.
+    train_dep: str
+        Train_dep is the name of the training department for the mixed training set.
+    test_dep: str
+        Name of the Test department for evaluation of mF1
+    
+    """
+
+    #Extract the roxs with mixed trained set
+    # and construct a matrix of the proportion of each study area
     pattern = r'\d+\.\d+'
     result_table = pd.DataFrame()
     for index, row in df.iterrows():
@@ -665,10 +480,10 @@ def mixedTrainSet(df, train_dep, test_dep):
     result_table = result_table.sort_index().sort_index(axis=1)
     print(result_table.to_latex(float_format="%.2f", bold_rows=True))
 
+    # Create the 3D plot
+
     X, Y = result_table.columns.values, result_table.index.values
     X, Y = np.meshgrid(X, Y)
-
-    # Create the 3D plot
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_wireframe(X, Y, result_table.values, color='k')
@@ -688,21 +503,6 @@ def mixedTrainSet(df, train_dep, test_dep):
 
 #%%
 if __name__ == "__main__":
-    class_size_rhone = pd.read_csv(
-        os.path.join(
-            "E:\\",
-            "Resultats_69",
-            "all_LU_approche1",
-            'class_size.csv'), index_col=0
-        )
-    class_size_gers = pd.read_csv(
-        os.path.join(
-            "Documents",
-            "Resultats",
-            "all_LU_approche1",
-            'class_size.csv'), index_col=0
-        )
-    class_histogram()
 
     ############################################################# RHONE
 
@@ -718,7 +518,7 @@ if __name__ == "__main__":
     df = pd.read_excel(save_path)
 
     #Importance des sources Rhône:
-    importance_des_sources(df,
+    sources_importance(df,
         list(reversed([15, 16, 27, 26, 18, 19, 43, 21, 20, 18, 33, 17])),
         list(reversed(
         ["Geometry", "Radiometry",
@@ -732,7 +532,6 @@ if __name__ == "__main__":
 
 
     #loco Rhône
-    #! Radiometry is not OK !
     rows = list(reversed([32, 22, 39, 38, 35, 36, 44, 37, 40, 34, 12]))
     sources_names = list(reversed(
     ["All - Geometry", "All - Radiometry",
@@ -762,7 +561,7 @@ if __name__ == "__main__":
     draw_metrics(save_path, 46, baseline_row=None, savepath=os.path.join("Pictures","article2","All_cols_gers_per_class_scores.eps"))
 
     #Importance des sources Gers:
-    importance_des_sources(df,
+    sources_importance(df,
         list(reversed([47, 48, 52, 51, 50, 12, 65, 53, 13, 49, 46, 9])),
         list(reversed(
         ["Geometry", "Radiometry",
@@ -789,7 +588,7 @@ if __name__ == "__main__":
     loco(df, rows, sources_names, baserow, savepath=savepath, xlims=(-0.13, 0.23))
 
     #without minus
-    importance_des_sources(df,
+    sources_importance(df,
         list(reversed([15, 54, 61, 60, 57, 58, 64, 59, 62, 56, 46, 4])),
         list(reversed(
         ["All - Geometry", "All - Radiometry",
@@ -830,17 +629,6 @@ if __name__ == "__main__":
 
     mixedTrainSet(df, "Rhône", 'Gers')
 
-    per_class_metrics_in_function_of_class_size_from_row(
-            class_size_rhone,
-            df,
-            baserow
-            )
-
-    per_class_metrics_in_function_of_class_size_from_row(
-            class_size_gers,
-            df,
-            baserow
-            )
 
     ############################################################# GERS to RHONE
 
@@ -871,16 +659,4 @@ if __name__ == "__main__":
 
     mixedTrainSet(df.iloc[50:], "Gers", "Rhône")
 
-
-    per_class_metrics_in_function_of_class_size_from_row(
-            class_size_gers,
-            df,
-            baserow
-            )
-
-    per_class_metrics_in_function_of_class_size_from_row(
-            class_size_rhone,
-            df,
-            baserow
-            )
 
