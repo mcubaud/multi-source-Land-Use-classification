@@ -23,13 +23,15 @@ The data on which the code is applied is available in the following Zenodo repos
 - **plot_function.py**: File with visualization functions.
 - **color_f_US.py**: File which assigns to each LU class a color.
 - **attributes_extraction_from_the_sources.py**: File to create the dataset from the sources. Link to the sources are provided in the Data sources section
+- **OSM_to_OCSGE.csv**: File to describe how to attribute to some OSM points, lines and polygons a OCS GE Land Use class.
+
 
 ## Warning ⚠️
 
 Please note that the source for Land Files is not directly available due to privacy reasons. While the other data sources are accessible through the provided links, the Land Files cannot be accessed directly from this repository. We apologize for any inconvenience this may cause. Attributes from the Land Files could not have been shared in the zenodo repository neither. The results obtained in the article are thus not fully reproducible. The code still works without these attributes by explicitly removing them.
 
 ## Data sources 🌐
-The dataset including the LU polygons of both study areas and the constructed attribute is available at https://doi.org/10.5281/zenodo.10462844}
+The dataset including the LU polygons of both study areas and the constructed attribute is available at https://doi.org/10.5281/zenodo.10462844
 - BD ORTHO is available at https://geoservices.ign.fr/bdortho.
 - CLC is available at https://land.copernicus.eu/en/products/corine-land-cover.
 - OSO is available at https://www.theia-land.fr/product/carte-doccupation-des-sols-de-la-france-metropolitaine/.
