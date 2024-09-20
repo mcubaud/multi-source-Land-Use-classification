@@ -1,11 +1,10 @@
 # Multi-source Land-Use classification 🌳🏙️
-This repository contains a Python script that implements a data-fusion based method for land use classification. The code is based on research conducted for a forthcoming article exploring transferability between two geographical areas. While the article is currently undergoing peer review, this repository provides an implementation of the method used in the study.
+This repository contains a Python script that implements a data-fusion based method for land use classification. The code is based on research conducted for the article:
+> Cubaud, M., Le Bris, A., Jolivet, L., & Olteanu-Raimond, A. M. (2024). Assessing the transferability of a multi-source land use classification workflow across two heterogeneous urban and rural areas. International Journal of Digital Earth, 17(1). https://doi.org/10.1080/17538947.2024.2376274
 
 Additionally, the methodologies employed in this code are highly related to our previous work:
  
 > Cubaud, M., Le Bris, A., Jolivet, L., and Olteanu-Raimond, A.-M. (2023). Comparison of Two Data Fusion Approaches for Land Use Classification. International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences, 48(1/W2), 699–706. DOI: 10.5194/isprs-archives-XLVIII-1-W2-2023-699-2023.
-
-While the code provided here is not from the aforementioned article, it shares similarities in methodology and objectives.
 
 ## Objectives 🎯
 
