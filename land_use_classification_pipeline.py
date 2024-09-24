@@ -179,7 +179,7 @@ def metrics_and_save_results(
         train_time,
         test_time
         ):
-    """Compute the different metrics and save the model."""
+    """Compute the different metrics and save the results in an excel file."""
 
     train_set_accuracy = sklearn.metrics.accuracy_score(y_train, y_train_pred)
     (train_set_precision,
@@ -397,6 +397,8 @@ if __name__ == "__main__":
                 
     #Create the folder for save_path if it does not exist
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    #Create the file if it does not exist
+    pd.DataFrame().to_excel(save_path)
 
     #Ordinally Encode some attributes
     ord_encoder = OrdinalEncoder(handle_unknown='error')

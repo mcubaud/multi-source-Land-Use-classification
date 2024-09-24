@@ -49,11 +49,13 @@ from plot_functions import recall_matrix_with_sep_diag, precision_matrix_with_se
 
 
 def str_matrix_to_numpy(str_mat):
+    """Convert a string representing a matrix to its numpy equivalent"""
     str_mat = str_mat.replace("[", "").replace("]", "").split()
     n = int(len(str_mat)**0.5)
     return np.array(str_mat, dtype=float).reshape(n,n)
 
 def per_class_metrics(conf_mat):
+    """Compute the per class metrics from the confusion matrix."""
     diag = np.diag(conf_mat)
     row_sums = np.sum(conf_mat, axis=1)
     col_sums = np.sum(conf_mat, axis=0)
@@ -68,11 +70,13 @@ def per_class_metrics(conf_mat):
     return recalls, precisions, F1
 
 def complete_row(str_mat):
+    """Returns the per class metrics given a matrix represented as a string"""
     conf_mat = str_matrix_to_numpy(str_mat)
     recalls, precisions, F1 = per_class_metrics(conf_mat)
     return list(np.concatenate((recalls, precisions, F1)))
 
 def divide_max_by_factor(factor):
+    """Downscaling strategy: the majority class is being set to a fraction of its current size (The size is divided by factor)."""
     def down_scaling(y):
         uniques, counts = np.unique(y, return_counts=True)
         counts[np.argmax(counts)] /= factor
@@ -80,6 +84,7 @@ def divide_max_by_factor(factor):
     return down_scaling
 
 def multiply_min_by_factor(factor):
+    """Upscaling strategy: the minority class size is being multiply by a factor."""
     def up_scaling(y):
         uniques, counts = np.unique(y, return_counts=True)
         counts[np.argmin(counts)] *= factor
@@ -87,6 +92,7 @@ def multiply_min_by_factor(factor):
     return up_scaling
 
 def if_less_than_value_set_value(value):
+    """Upscaling strategy: all the classes with less than 'value' samples are upsampled to 'value' samples."""
     def up_scaling(y):
         uniques, counts = np.unique(y, return_counts=True)
         counts[counts<value] = value
@@ -94,6 +100,7 @@ def if_less_than_value_set_value(value):
     return up_scaling
 
 def sm_in_fonction_of_columns(columns):
+    """Choose the right version of the SMOTE algorithm in function of the presence of continuous or categorical features"""
     categorical_features = columns.isin(categorical_cols_list)
 
     if np.sum(categorical_features) == len(categorical_features):
@@ -117,7 +124,7 @@ def train_test(
         X_test,
         y_test
         ):
-
+    """Train the classifier on the training set and apply it on the test set."""
     #TRAIN
     t0 = time.time()
     clf.fit(X_train, y_train)
@@ -150,7 +157,42 @@ def train_test_and_save_result(
         comment,
         save_path
         ):
+    """Train the classifier on the training set, apply it on the test set and save the results.
 
+    Parameters
+    ----------
+    clf : sklearn classifier
+        A sklearn or derived classifier or a pipeline.
+    X_train : pd.DataFrame
+        Containing the train attributes. Shape (n_samples_train, n_attributes).
+    y_train : np.array
+        Containing the class numbers in the train set. Shape (n_samples_train).
+    X_test : pd.DataFrame
+        Containing the test attributes. Shape (n_samples_test, n_attributes).
+    y_test : np.array
+        Containing the class numbers in the test set. Shape (n_samples_test).
+    X_geom : gpd.GeoSeries
+        Containing the geometries of the dataset.
+    clf_name : str
+        Name of the classifier to be displayed.
+    combination : list
+        List of the input features
+    preprocessing : str
+        Name of the preprocessing steps
+    clf_type : sklearn classifier
+        The classifier part of the pipeline
+    mean_cv_accuracy : str
+        The mean cross validation accuracy obtained, legacy
+    comment : str
+        Any kind of comment to add to the save file
+
+    Returns
+    -------
+    clf : sklearn classifier
+        the trained classifier
+    y_pred : np.array
+        The predicted classes of test set
+    """
     y_train_pred, train_time, y_pred, test_time, clf = train_test(
             clf,
             X_train,
@@ -198,6 +240,7 @@ def metrics_and_save_results(
         test_time,
         save_path
         ):
+    """Compute the different metrics and save the results in an excel file."""
 
     train_set_accuracy = sklearn.metrics.accuracy_score(y_train, y_train_pred)
     (train_set_precision,
@@ -328,6 +371,7 @@ def metrics_and_save_results(
     return clf, y_pred
 
 def compute_confidence(clf, X_test, y_pred):
+    """Compute for each prediction of the test set 3 measures of the confidence of the classifier: the max probability, the entropy and the marginal confidence."""
     y_proba = clf.predict_proba(X_test)
     entropy = -np.nansum(y_proba*np.log2(y_proba),axis=1)
     pb_sort = np.sort(y_proba, axis=1)
@@ -365,16 +409,9 @@ def compute_confidence(clf, X_test, y_pred):
     ))
     plt.show()
 
-def surface_col_to_surface_fraction_col(X, cols):
-    X[cols] = X[cols].to_numpy() / X["surface"].to_numpy().reshape(-1, 1)
-    return X
-
-def surface_fraction_col_to_surface_col(X, cols):
-    X[cols] = X[cols].to_numpy() * X["surface"].to_numpy().reshape(-1, 1)
-    return X
 
 def allign_y(y_from, y_to, US_utilises_from, US_utilises_to):
-
+    """Ensure that the indices of the classes for both study areas corresponds to the same labels"""
     US_utilises_both = np.array(
         list(US_utilises_from) +
         list(
@@ -393,7 +430,20 @@ def allign_y(y_from, y_to, US_utilises_from, US_utilises_to):
     return y_from, y_to_alligned, US_utilises_both
 
 def get_X_Y(ocsge, subset_boolean_index):
-
+    """Filter the dataset with the boolean index, then returns:
+        Returns
+    -------
+    X : pd.dataframe
+        the attributes of each polygon
+    X_geom : pd.series
+        the geometry of the polygons in the dataset
+    y : np.array
+        the ordinaly encoded classes of each polygon
+    y_text : pd.series
+        the classes with their text labels of each polygon
+    US_utilises : np.array
+        The list of the classes encountered in the dataset, corresponding to the encoding in y    
+    """
     ocsge_subset = ocsge.loc[
         subset_boolean_index,
         columns_to_keep
@@ -428,30 +478,21 @@ if __name__ == "__main__":
         "results_ml.xlsx"
         )
 
+    #Create the folder for save_path if it does not exist
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    #Create the file if it does not exist
+    if not os.path.exists(save_path):
+        pd.DataFrame().to_excel(save_path)
+
     if from_departement_to == "32to69":
 
-        if objective == "US235":
-
-            ocsge_from = gpd.read_file(
-                "plus_image.gpkg",
-                layer='plus_image',
-                driver="GPKG").set_index("ID_1")
-
-            ocsge_to = gpd.read_file(
-                "E:\\plus_image.gpkg",
-                layer='plus_image',
-                driver="GPKG").set_index("ID_1")
-
         if objective == "all_LU":
-            print("ocsge_from")
             ocsge_from = gpd.read_file(
-                "plus_foncier_updated.gpkg",
+                "OCS_GE_Gers.gpkg",
                 driver="GPKG").set_index("ID_1")
-            print("ocsge_to")
             ocsge_to = gpd.read_file(
-                "E:\\osm_lines.gpkg",
+                "OCS_GE_Rhone.gpkg",
                 driver="GPKG").set_index("ID_1")
-            print("imported")
 
         ocsge_to = ocsge_to.rename(columns={
             "CODE_18" : "CODE_12",
@@ -461,25 +502,13 @@ if __name__ == "__main__":
 
     elif from_departement_to == "69to32":
 
-        if objective == "US235":
-
-            ocsge_to = gpd.read_file(
-                "plus_image.gpkg",
-                layer='plus_image',
-                driver="GPKG").set_index("ID_1")
-
-            ocsge_from = gpd.read_file(
-                "E:\\plus_image.gpkg",
-                layer='plus_image',
-                driver="GPKG").set_index("ID_1")
-
         if objective == "all_LU":
             ocsge_from = gpd.read_file(
-                "E:\\osm_lines.gpkg",
+                "OCS_GE_Rhone.gpkg",
                 driver="GPKG").set_index("ID_1")
 
             ocsge_to = gpd.read_file(
-                "plus_foncier_updated.gpkg",
+                "OCS_GE_Gers.gpkg",
                 driver="GPKG").set_index("ID_1")
 
         ocsge_from = ocsge_from.rename(columns={
@@ -488,15 +517,7 @@ if __name__ == "__main__":
             })
 
 
-    if objective == "US235":
-
-        def get_boolean_index(ocsge):
-            return ocsge.loc[
-                :, "CODE_US"
-                ].isin(
-                    ['US2', 'US3', 'US5']
-                    )
-    elif objective == "all_LU":
+    if objective == "all_LU":
         def get_boolean_index(ocsge):
             return ~ ocsge.loc[
                 :, "CODE_US"
@@ -506,24 +527,7 @@ if __name__ == "__main__":
 
     subset_boolean_index_from = get_boolean_index(ocsge_from)
     subset_boolean_index_to = get_boolean_index(ocsge_to)
-    # elif objective == "all_LU":
-    #     subset_boolean_index = np.ones(len(ocsge), bool)
-
-
-    # for column in ocsge.columns:
-    #     if "Surf " in column:
-    #         ocsge.loc[
-    #             :,column
-    #             ] = ocsge.loc[
-    #                 :,column
-    #                 ] / np.maximum(ocsge.loc[
-    #                     :,"surface"
-    #                     ],1)
-
-    # __, ocsge.loc[:, "code_cs"] = np.unique(
-    #     ocsge.loc[:, "CODE_CS"],
-    #     return_inverse=True)
-
+    
     ord_encoder = OrdinalEncoder(handle_unknown='error')
     old_names = [
         "CODE_CS",
@@ -550,6 +554,7 @@ if __name__ == "__main__":
         new_names += ["NATURE_hydro", "NATURE_hydro_mean_1m"]
 
     def transform_ocsge(ocsge):
+        """Ordinally encode some features"""
         ocsge[
             new_names
             ] = ord_encoder.fit_transform(
@@ -573,66 +578,9 @@ if __name__ == "__main__":
     ocsge_from = transform_ocsge(ocsge_from)
     ocsge_to = transform_ocsge(ocsge_to)
 
-    ##Regrouper les machins de la BD TOPO
-    # for aggr in ["Surf", "Nb"]:
-    #     for end in ["", "_mean_1m"]:
-    #         ocsge[f"{aggr}_US3_Bat_BD_topo{end}"] = ocsge.loc[
-    #             :,
-    #             (f"{aggr} Commercial et services{end}",
-    #              f"{aggr} Religieux{end}",
-    #              f"{aggr} Sportif{end}")].sum(axis=1)
-    #         ocsge[f"{aggr}_inconnu_Bat_BD_topo{end}"] = ocsge.loc[
-    #             :,
-    #             (f"{aggr} Annexe{end}",
-    #              f"{aggr} Indifférencié{end}"
-    #              )].sum(axis=1)
-    #         ocsge = ocsge.drop(
-    #             columns=[f"{aggr} Commercial et services{end}",
-    #                      f"{aggr} Religieux{end}",
-    #                      f"{aggr} Sportif{end}",
-    #                      f"{aggr} Annexe{end}",
-    #                      f"{aggr} Indifférencié{end}"],
-    #             errors='ignore')
 
 
-    OH_encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
-
-
-    # ocsge.loc[
-    #     :,ocsge.loc[:,"CODE_CS"].unique()
-    #     ] = pd.DataFrame(
-    #         OH_encoder.fit_transform(
-    #             ocsge.loc[:,"CODE_CS"].to_numpy().reshape(-1,1)),
-    #         index=ocsge.index,
-    #         columns=ocsge.loc[:,"CODE_CS"].unique()
-    #         )
-
-    # cs_mean_1m_new_cols = [val+"_mean_1m" for val in ocsge.loc[:,"CODE_CS_mean_1m"].unique()]
-    # ocsge.loc[:,cs_mean_1m_new_cols] = pd.DataFrame(
-    #     OH_encoder.fit_transform(
-    #         ocsge.loc[:,"CODE_CS_mean_1m"].to_numpy().reshape(-1,1)),
-    #     index=ocsge.index,
-    #     columns=np.char.add(
-    #         ocsge.loc[:,"CODE_CS_mean_1m"].unique().astype(str),
-    #         "_mean_1m")
-    #     )
-
-    # #La TRICHE (°O°) mais si ça semble améliorer peut-être faire un procéssus en plusieurs étapes
-    # ocsge.loc[:,ocsge.loc[:,"CODE_US_mean_1m"].unique()] = pd.DataFrame(
-    #     OH_encoder.fit_transform(
-    #         ocsge.loc[:,"CODE_US_mean_1m"].to_numpy().reshape(-1,1)),
-    #     index=ocsge.index,
-    #     columns=np.char.add(
-    #         ocsge.loc[:,"CODE_US_mean_1m"].unique().astype(str),
-    #         "_mean_1m")
-    #     )
-
-
-
-
-    # print(ocsge.max(axis=0, numeric_only=False))
-
-    #%%Définition des sources
+    #%%Definition of the sources
 
     categorical_cols_list = sources.categorical_cols_list
 
@@ -697,12 +645,12 @@ if __name__ == "__main__":
         )
 
 
-    scaler = MinMaxScaler() # StandardScaler() # DummyScaler() #
+    scaler = MinMaxScaler()
     scaler = scaler.set_output(transform="pandas")
 
     pca = PCA()
 
-    #%%Un classifieur sur chaque source
+    #%%Simple transferability
 
     xgboost = XGBClassifier(
         random_state=0,
@@ -710,29 +658,8 @@ if __name__ == "__main__":
         n_estimators=1000
         )
 
-    # rf = RandomForestClassifier(
-    #     max_depth=10,
-    #     max_features='sqrt',
-    #     n_estimators = 150,
-    #     random_state=0
-    #     )
 
-    rf = RandomForestClassifier(
-        max_depth=50,
-        max_features=0.2,
-        n_estimators = 1000,
-        random_state=0
-        )
-
-    # svm = SVC(
-    #     C=1,
-    #     gamma=0.0001,
-    #     kernel="rbf",
-    #     random_state=0
-    #     )
-
-    for combinaison in combinaisons[11:12]:
-    #for combinaison in [sources.all_cols]:
+    for combinaison in [sources.all_cols]:
         try:
             combinaison = list(set(combinaison) - set(sources.CS_cols))
             print(combinaison)
@@ -742,18 +669,10 @@ if __name__ == "__main__":
             X_train, X_geom_train, y_train, y_text_train, US_utilises_train = get_X_Y(
                 ocsge_from,
                 subset_boolean_index_from)
-            # X_train, __, y_train, __ = train_test_split(X_train, y_train,
-            #                                             train_size=0.8,
-            #                                             random_state=rng,
-            #                                             #stratify=y_train
-            #                                             )
+
             X_test, X_geom_test, y_test, y_text_test, US_utilises_test = get_X_Y(
                 ocsge_to,
                 subset_boolean_index_to)
-            # __, X_test, __, y_test = train_test_split(X_test, y_test,
-            #                                         train_size=0.8,
-            #                                         random_state=rng,
-            #                                         stratify=y_test)
 
             y_train, y_test, US_utilises = allign_y(
                 y_train, y_test,
@@ -763,80 +682,28 @@ if __name__ == "__main__":
             categorical_features = X_train.columns.isin(categorical_cols_list)
 
             if np.sum(categorical_features) == len(categorical_features):
-                # print("SMOTEN")
+
                 sm = SMOTEN(random_state=0)
             elif np.sum(categorical_features) == 0:
-                # print("SMOTE")
                 sm = SMOTE(random_state=0)
             else:
-                # print("SMOTENC")
                 sm = SMOTENC(random_state=0,
                              categorical_features=categorical_features
                              )
 
-            selector = SelectKBest(chi2, k=len(X_train.columns))
-
-            # X = SelectKBest(chi2, k=k).fit_transform(X, y)
-
-            # clf = Pipeline(steps=[
-            #     # ("selector", selector),
-            #     ("scaler", scaler),
-            #     # ("under_sampler", rus_US5_taille_US3),
-            #     # ("under_sampler", rus_US3_et_US5),
-            #     ("SMOTENC_sampler", sm),
-            #     # ("pca", pca),
-            #     # ("clf", rf)
-            #     ("clf", xgboost)
-            #     ])
-
-            # clf_name = "XGBoost"
-            # # clf_name = "RF"
-
-            #Train 70%, eval 10%, test 20%
-            #Eval ne sert à rien mais c'est pour que ce soit pareil que dans DST
-            # X_train, __, y_train, __ = train_test_split(X_from, y_from,
-            #                                             train_size=0.8,
-            #                                             random_state=rng)
-            # __, X_test, __, y_test = train_test_split(X_to, y_to,
-            #                                             train_size=0.8,
-            #                                             random_state=rng)
-            # X_train, X_eval, y_train, y_eval = train_test_split(X_train, y_train,
-            #                                                       test_size=0.1/0.8,
-            #                                                       random_state=rng)
-
 
             liste_clf = [
-                xgboost,
-                # rf,
-                #svm
+                xgboost
                 ]
 
             liste_clf_names = [
-                "XGBoost",
-                # "RF",
-                #"SVM"
+                "XGBoost"
                 ]
-
-
 
             for i_clf, clf_type in enumerate(liste_clf):
 
                 clf_name = liste_clf_names[i_clf]
                 liste_pipelines = [
-                        # Pipeline(steps=[
-                        #     ("scaler", scaler),
-                        #     ("clf", clf_type)
-                        # ]),
-                        # Pipeline(steps=[
-                        #     ("scaler", scaler),
-                        #     ("random_under_sampler", rus_US3_et_US5),
-                        #     ("clf", clf_type)
-                        # ]),
-                        # Pipeline(steps=[
-                        #     ("scaler", scaler),
-                        #     ("SMOTENC_sampler", sm),
-                        #     ("clf", clf_type)
-                        # ]),
                         Pipeline(steps=[
                             ("scaler", scaler),
                             ("ROS_to_1000", ros_min_1000),
@@ -872,7 +739,7 @@ if __name__ == "__main__":
             print(sources.find_source_name(combinaison), "didn't work")
             print("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
 
-    #%%Un peu de chaque département dans le jeu de train
+    #%% Samples from both study areas in the train set
 
     save_path_2 = os.path.join(
         "E:\\",
@@ -882,32 +749,18 @@ if __name__ == "__main__":
         "results_ml.xlsx"
         )
 
+    #Create the folder for save_path if it does not exist
+    os.makedirs(os.path.dirname(save_path_2), exist_ok=True)
+    #Create the file if it does not exist
+    if not os.path.exists(save_path_2):
+        pd.DataFrame().to_excel(save_path_2)
+
     xgboost = XGBClassifier(
         random_state=0,
         learning_rate=0.1,
         n_estimators=1000
         )
 
-    # rf = RandomForestClassifier(
-    #     max_depth=10,
-    #     max_features='sqrt',
-    #     n_estimators = 150,
-    #     random_state=0
-    #     )
-
-    rf = RandomForestClassifier(
-        max_depth=50,
-        max_features=0.2,
-        n_estimators = 1000,
-        random_state=0
-        )
-
-    # svm = SVC(
-    #     C=1,
-    #     gamma=0.0001,
-    #     kernel="rbf",
-    #     random_state=0
-    #     )
 
     #for combinaison in combinaisons:
     for combinaison in [sources.all_cols]:
@@ -915,242 +768,186 @@ if __name__ == "__main__":
         columns_to_keep = list(combinaison) + ["CODE_US", "geometry"]
 
         iterations = 0
-        for train_size_from in [0.05, 0.1]:#, 0.2, 0.5, 0.8]:
-            for train_size_to in [0, 0.05, 0.1]:#, 0.2, 0.5, 0.8]:
-                #iterations+=1
-                #if iterations in [1]:
-                for __ in range(5):
-                    print("train size from :", train_size_from)
-                    print("train size to :", train_size_to)
-                    X_from, X_geom_from, y_from, y_text_from, US_utilises_from = get_X_Y(
-                        ocsge_from,
-                        subset_boolean_index_from)
+        for train_size_from in [0.05, 0.1, 0.2, 0.5, 0.8]:
+            for train_size_to in [0, 0.05, 0.1, 0.2, 0.5, 0.8]:
 
-                    if train_size_from!=0:
-                        X_train_from, X_test_from, y_train_from, y_test_from = train_test_split(X_from, y_from,
-                                                                    train_size=train_size_from,
-                                                                    #random_state=rng,
-                                                                    stratify=y_from
-                                                                    )
-                    else:
-                        X_train_from = X_from[np.zeros_like(y_from, dtype=bool)]#shape (0, nb_dimension)
-                        X_test_from = X_from
-                        y_train_from = []
-                        y_test_from = y_from
+                print("train size from :", train_size_from)
+                print("train size to :", train_size_to)
+                X_from, X_geom_from, y_from, y_text_from, US_utilises_from = get_X_Y(
+                    ocsge_from,
+                    subset_boolean_index_from)
 
-                    X_to, X_geom, y_to, y_text_test, US_utilises_to = get_X_Y(
-                        ocsge_to,
-                        subset_boolean_index_to)
-
-                    y_train_from, y_to, US_utilises = allign_y(
-                        y_train_from, y_to,
-                        US_utilises_from, US_utilises_to)
-
-                    if train_size_to!=0:
-                        X_train_to, X_test, y_train_to, y_test = train_test_split(X_to, y_to,
-                                                                train_size=train_size_to,
+                if train_size_from!=0:
+                    X_train_from, X_test_from, y_train_from, y_test_from = train_test_split(X_from, y_from,
+                                                                train_size=train_size_from,
                                                                 random_state=rng,
-                                                                stratify=y_to)
-                    else:
+                                                                stratify=y_from
+                                                                )
+                else:
+                    X_train_from = X_from[np.zeros_like(y_from, dtype=bool)]#shape (0, nb_dimension)
+                    X_test_from = X_from
+                    y_train_from = []
+                    y_test_from = y_from
 
-                        X_test = X_to
-                        y_test = y_to
-                        X_train_to = X_to[np.zeros_like(y_test, dtype=bool)]#shape (0, nb_dimension)
-                        y_train_to = []
+                X_to, X_geom, y_to, y_text_test, US_utilises_to = get_X_Y(
+                    ocsge_to,
+                    subset_boolean_index_to)
 
-                    X_train = pd.concat([X_train_from, X_train_to])
-                    y_train = np.concatenate([y_train_from, y_train_to])
-                    print("total train size:", len(y_train))
+                y_train_from, y_to, US_utilises = allign_y(
+                    y_train_from, y_to,
+                    US_utilises_from, US_utilises_to)
 
-                    categorical_features = X_train.columns.isin(categorical_cols_list)
+                if train_size_to!=0:
+                    X_train_to, X_test, y_train_to, y_test = train_test_split(X_to, y_to,
+                                                            train_size=train_size_to,
+                                                            random_state=rng,
+                                                            stratify=y_to)
+                else:
 
-                    if np.sum(categorical_features) == len(categorical_features):
-                        # print("SMOTEN")
-                        sm = SMOTEN(random_state=0)
-                    elif np.sum(categorical_features) == 0:
-                        # print("SMOTE")
-                        sm = SMOTE(random_state=0)
-                    else:
-                        # print("SMOTENC")
-                        sm = SMOTENC(random_state=0,
-                                     categorical_features=categorical_features,
-                                     categorical_encoder=None
-                                     )
+                    X_test = X_to
+                    y_test = y_to
+                    X_train_to = X_to[np.zeros_like(y_test, dtype=bool)]#shape (0, nb_dimension)
+                    y_train_to = []
 
-                    selector = SelectKBest(chi2, k=len(X_train.columns))
+                X_train = pd.concat([X_train_from, X_train_to])
+                y_train = np.concatenate([y_train_from, y_train_to])
+                print("total train size:", len(y_train))
 
-                    # X = SelectKBest(chi2, k=k).fit_transform(X, y)
+                categorical_features = X_train.columns.isin(categorical_cols_list)
 
-                    # clf = Pipeline(steps=[
-                    #     # ("selector", selector),
-                    #     ("scaler", scaler),
-                    #     # ("under_sampler", rus_US5_taille_US3),
-                    #     # ("under_sampler", rus_US3_et_US5),
-                    #     ("SMOTENC_sampler", sm),
-                    #     # ("pca", pca),
-                    #     # ("clf", rf)
-                    #     ("clf", xgboost)
-                    #     ])
-
-                    # clf_name = "XGBoost"
-                    # # clf_name = "RF"
-
-                    #Train 70%, eval 10%, test 20%
-                    #Eval ne sert à rien mais c'est pour que ce soit pareil que dans DST
-                    # X_train, __, y_train, __ = train_test_split(X_from, y_from,
-                    #                                             train_size=0.8,
-                    #                                             random_state=rng)
-                    # __, X_test, __, y_test = train_test_split(X_to, y_to,
-                    #                                             train_size=0.8,
-                    #                                             random_state=rng)
-                    # X_train, X_eval, y_train, y_eval = train_test_split(X_train, y_train,
-                    #                                                       test_size=0.1/0.8,
-                    #                                                       random_state=rng)
+                if np.sum(categorical_features) == len(categorical_features):
+                    sm = SMOTEN(random_state=0)
+                elif np.sum(categorical_features) == 0:
+                    sm = SMOTE(random_state=0)
+                else:
+                    sm = SMOTENC(random_state=0,
+                                    categorical_features=categorical_features,
+                                    categorical_encoder=None
+                                    )
 
 
-                    liste_clf = [
-                        xgboost,
-                        # rf,
-                        #svm
+                liste_clf = [
+                    xgboost
+                    ]
+
+                liste_clf_names = [
+                    "XGBoost"
+                    ]
+
+
+
+                for i_clf, clf_type in enumerate(liste_clf):
+
+                    clf_name = liste_clf_names[i_clf]
+                    liste_pipelines = [
+                            Pipeline(steps=[
+                                ("scaler", scaler),
+                                ("ROS_to_1000", ros_min_1000),
+                                ("RUS_US5_div_by_2", rus_US5_div_by_2),
+                                ("SMOTENC_sampler", sm),
+                                ("clf", clf_type)
+                            ])
+
                         ]
 
-                    liste_clf_names = [
-                        "XGBoost",
-                        # "RF",
-                        #"SVM"
-                        ]
+
+                    for j_sampling, clf in enumerate(liste_pipelines):
+
+                        y_train_pred, train_time, y_pred, test_time, clf = train_test(
+                                clf,
+                                X_train,
+                                y_train,
+                                X_test,
+                                y_test
+                                )
+
+                        metrics_and_save_results(
+                                clf,
+                                y_train_pred,
+                                y_train,
+                                y_pred,
+                                X_test,
+                                y_test,
+                                X_geom,
+                                clf_name,
+                                combinaison,
+                                np.array(clf.steps)[:-1, 0],
+                                clf_type,
+                                "NO CV",
+                                f"train set : {train_size_from*100:.2f}% of train departement and {train_size_to*100:.2f}% of test departement",
+                                train_time,
+                                test_time,
+                                save_path
+                                )
+
+                        t0 = time.time()
+                        y_pred_from = clf.predict(X_test_from)
+                        test_time = time.time() - t0
+
+                        metrics_and_save_results(
+                                clf,
+                                y_train_pred,
+                                y_train,
+                                y_pred_from,
+                                X_test_from,
+                                y_test_from,
+                                X_geom_from,
+                                clf_name,
+                                combinaison,
+                                np.array(clf.steps)[:-1, 0],
+                                clf_type,
+                                "NO CV",
+                                f"train set : {train_size_to*100:.2f}% of train departement and {train_size_from*100:.2f}% of test departement",
+                                train_time,
+                                test_time,
+                                save_path_2
+                                )
 
 
+    #%%plot the mF1 scores obtained for the transferability with samples from both study area in the train set
+    import matplotlib as mpl
 
-                    for i_clf, clf_type in enumerate(liste_clf):
+    deps = {"69":"Rhône", "32":"Gers"}
 
-                        clf_name = liste_clf_names[i_clf]
-                        liste_pipelines = [
-                                # Pipeline(steps=[
-                                #     ("scaler", scaler),
-                                #     ("clf", clf_type)
-                                # ]),
-                                # Pipeline(steps=[
-                                #     ("scaler", scaler),
-                                #     ("random_under_sampler", rus_US3_et_US5),
-                                #     ("clf", clf_type)
-                                # ]),
-                                # Pipeline(steps=[
-                                #     ("scaler", scaler),
-                                #     ("SMOTENC_sampler", sm),
-                                #     ("clf", clf_type)
-                                # ]),
-                                Pipeline(steps=[
-                                    ("scaler", scaler),
-                                    ("ROS_to_1000", ros_min_1000),
-                                    ("RUS_US5_div_by_2", rus_US5_div_by_2),
-                                    ("SMOTENC_sampler", sm),
-                                    ("clf", clf_type)
-                                ])
-
-                            ]
+    dep_from = deps[ from_departement_to[:2] ]
+    dep_to = deps[ from_departement_to[-2:] ]
 
 
-                        for j_sampling, clf in enumerate(liste_pipelines):
+    df = pd.read_excel(save_path, 0, index_col=0)
+    liste_results = df.loc[:, "test set F1"]
+    liste_train_size_from = [0.05, 0.1, 0.2, 0.5, 0.8]
+    liste_train_size_to = [0, 0.005, 0.01, 0.05, 0.1, 0.2]
+    linestyles = ["-", "-.", "--", ":"]
+    marker = ['', 'o']
+    cmap = mpl.colormaps["rainbow"].resampled(len(liste_train_size_from))
+    n = len(liste_train_size_to)
+    for i in range(len(liste_train_size_from)):
+        plt.plot(liste_train_size_to,
+                liste_results.iloc[n*i:n*(i+1)],
+                label=liste_train_size_from[i],
+                color=cmap(i),
+                linestyle=linestyles[i%len(linestyles)],
+                marker=marker[i//len(linestyles)]
+                )
+    #plt.ylim(0, 1)
+    plt.xlabel(f"Proportion of {dep_to} dataset in train set")
+    plt.ylabel("mF1")
+    plt.legend(title=f"Proportion of {dep_from} dataset in train set")
+    plt.title(f"Model evaluated on the rest of {dep_to} dataset")
 
-                            y_train_pred, train_time, y_pred, test_time, clf = train_test(
-                                    clf,
-                                    X_train,
-                                    y_train,
-                                    X_test,
-                                    y_test
-                                    )
-
-                            metrics_and_save_results(
-                                    clf,
-                                    y_train_pred,
-                                    y_train,
-                                    y_pred,
-                                    X_test,
-                                    y_test,
-                                    X_geom,
-                                    clf_name,
-                                    combinaison,
-                                    np.array(clf.steps)[:-1, 0],
-                                    clf_type,
-                                    "NO CV",
-                                    f"train set : {train_size_from*100:.2f}% of train departement and {train_size_to*100:.2f}% of test departement",
-                                    train_time,
-                                    test_time,
-                                    save_path
-                                    )
-
-                            t0 = time.time()
-                            y_pred_from = clf.predict(X_test_from)
-                            test_time = time.time() - t0
-
-                            metrics_and_save_results(
-                                    clf,
-                                    y_train_pred,
-                                    y_train,
-                                    y_pred_from,
-                                    X_test_from,
-                                    y_test_from,
-                                    X_geom_from,
-                                    clf_name,
-                                    combinaison,
-                                    np.array(clf.steps)[:-1, 0],
-                                    clf_type,
-                                    "NO CV",
-                                    f"train set : {train_size_to*100:.2f}% of train departement and {train_size_from*100:.2f}% of test departement",
-                                    train_time,
-                                    test_time,
-                                    save_path_2
-                                    )
-                # except Exception as e:
-                #     print("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-                #     print(e)
-                #     print("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
-
-#%%
-import matplotlib as mpl
-
-deps = {"69":"Rhône", "32":"Gers"}
-
-dep_from = deps[ from_departement_to[:2] ]
-dep_to = deps[ from_departement_to[-2:] ]
-
-
-df = pd.read_excel(save_path, 0, index_col=0)
-liste_results = df.loc[:, "test set F1"]
-liste_train_size_from = [0.05, 0.1, 0.2, 0.5, 0.8]
-liste_train_size_to = [0, 0.005, 0.01, 0.05, 0.1, 0.2]
-linestyles = ["-", "-.", "--", ":"]
-marker = ['', 'o']
-cmap = mpl.colormaps["rainbow"].resampled(len(liste_train_size_from))
-n = len(liste_train_size_to)
-for i in range(len(liste_train_size_from)):
-    plt.plot(liste_train_size_to,
-             liste_results.iloc[n*i:n*(i+1)],
-             label=liste_train_size_from[i],
-             color=cmap(i),
-             linestyle=linestyles[i%len(linestyles)],
-             marker=marker[i//len(linestyles)]
-             )
-#plt.ylim(0, 1)
-plt.xlabel(f"Proportion of {dep_to} dataset in train set")
-plt.ylabel("mF1")
-plt.legend(title=f"Proportion of {dep_from} dataset in train set")
-plt.title(f"Model evaluated on the rest of {dep_to} dataset")
-
-plt.figure()
-cmap = mpl.colormaps["rainbow"].resampled(len(liste_train_size_to))
-n = len(liste_train_size_to)
-for i in range(len(liste_train_size_to)):
-    plt.plot(liste_train_size_from,
-             liste_results[i::n],
-             label=liste_train_size_to[i],
-             color=cmap(i),
-             linestyle=linestyles[i%len(linestyles)],
-             marker=marker[i//len(linestyles)]
-             )
-#plt.ylim(0, 1)
-plt.xlabel(f"Proportion of {dep_from} dataset in train set")
-plt.ylabel("mF1")
-plt.legend(title=f"Proportion of {dep_to} dataset in train set")
-plt.title(f"Model evaluated on the rest of {dep_to} dataset")
+    plt.figure()
+    cmap = mpl.colormaps["rainbow"].resampled(len(liste_train_size_to))
+    n = len(liste_train_size_to)
+    for i in range(len(liste_train_size_to)):
+        plt.plot(liste_train_size_from,
+                liste_results[i::n],
+                label=liste_train_size_to[i],
+                color=cmap(i),
+                linestyle=linestyles[i%len(linestyles)],
+                marker=marker[i//len(linestyles)]
+                )
+    #plt.ylim(0, 1)
+    plt.xlabel(f"Proportion of {dep_from} dataset in train set")
+    plt.ylabel("mF1")
+    plt.legend(title=f"Proportion of {dep_to} dataset in train set")
+    plt.title(f"Model evaluated on the rest of {dep_to} dataset")
